@@ -4,42 +4,84 @@ import { siteConfig } from "@/config/site"
 import { cn } from "@/lib/utils"
 import { buttonVariants } from "@/components/ui/button"
 import { Icons } from "@/components/icons"
-import { ThemeToggle } from "@/components/layouts/theme-toggle"
+import { JoinNewsletterForm } from "@/components/join-newsletter-form"
+import { ModeToggle } from "@/components/layouts/mode-toggle"
+import { Shell } from "@/components/shell"
 
 export function SiteFooter() {
   return (
     <footer className="w-full border-t bg-background">
-      <div className="container flex flex-col items-center justify-between space-y-1 py-5 md:h-16 md:flex-row md:py-0">
-        <div className="text-center text-base text-muted-foreground">
-          Learn to do a{" "}
-          <a
-            aria-label="Kickflip tutorial on YouTube"
-            href="https://www.youtube.com/watch?v=kpVhjV-I6nM"
-            target="_blank"
-            rel="noreferrer"
-            className="font-semibold transition-colors hover:text-slate-950 dark:hover:text-slate-200"
-          >
-            kickflip
-          </a>
-        </div>
-        <div className="flex items-center space-x-1">
-          <Link href={siteConfig.links.github} target="_blank" rel="noreferrer">
-            <div
+      <Shell>
+        <section className="flex flex-col gap-10 lg:flex-row lg:gap-20">
+          <section>
+            <Link href="/" className="flex w-fit items-center space-x-2">
+              <Icons.logo className="size-6" aria-hidden="true" />
+              <span className="font-bold">{siteConfig.name}</span>
+              <span className="sr-only">Home</span>
+            </Link>
+          </section>
+          <section className="grid flex-1 grid-cols-1 gap-10 xxs:grid-cols-2 sm:grid-cols-4">
+            {siteConfig.footerNav.map((item) => (
+              <div key={item.title} className="space-y-3">
+                <h4 className="text-base font-medium">{item.title}</h4>
+                <ul className="space-y-2.5">
+                  {item.items.map((link) => (
+                    <li key={link.title}>
+                      <Link
+                        href={link.href}
+                        target={link?.external ? "_blank" : undefined}
+                        rel={link?.external ? "noreferrer" : undefined}
+                        className="text-sm text-muted-foreground transition-colors hover:text-foreground"
+                      >
+                        {link.title}
+                        <span className="sr-only">{link.title}</span>
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ))}
+          </section>
+          <section className="space-y-3">
+            <h4 className="text-base font-medium">
+              Subscribe to our newsletter
+            </h4>
+            <JoinNewsletterForm />
+          </section>
+        </section>
+        <section className="flex items-center space-x-4">
+          <div className="flex-1 text-left text-sm leading-loose text-muted-foreground">
+            Built by{" "}
+            <Link
+              href="https://twitter.com/sadmann17"
+              target="_blank"
+              rel="noreferrer"
+              className="font-semibold transition-colors hover:text-foreground"
+            >
+              Sadman
+              <span className="sr-only">Twitter</span>
+            </Link>
+            .
+          </div>
+          <div className="flex items-center space-x-1">
+            <Link
+              href={siteConfig.links.github}
+              target="_blank"
+              rel="noreferrer"
               className={cn(
                 buttonVariants({
-                  size: "sm",
+                  size: "icon",
                   variant: "ghost",
-                }),
-                "w-9 px-0"
+                })
               )}
             >
-              <Icons.gitHub className="h-5 w-5" />
+              <Icons.gitHub className="size-4" aria-hidden="true" />
               <span className="sr-only">GitHub</span>
-            </div>
-          </Link>
-          <ThemeToggle />
-        </div>
-      </div>
+            </Link>
+            <ModeToggle />
+          </div>
+        </section>
+      </Shell>
     </footer>
   )
 }

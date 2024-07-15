@@ -2,11 +2,12 @@
 
 import * as React from "react"
 import Link from "next/link"
-import { usePathname } from "next/navigation"
-import type { MainNavItem, SidebarNavItem } from "@/types"
+import { useSelectedLayoutSegment } from "next/navigation"
+import type { MainNavItem } from "@/types"
 
 import { siteConfig } from "@/config/site"
 import { cn } from "@/lib/utils"
+import { useMediaQuery } from "@/hooks/use-media-query"
 import {
   Accordion,
   AccordionContent,
@@ -19,41 +20,44 @@ import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
 import { Icons } from "@/components/icons"
 
 interface MobileNavProps {
-  mainNavItems?: MainNavItem[]
-  sidebarNavItems: SidebarNavItem[]
+  items?: MainNavItem[]
 }
 
-export function MobileNav({ mainNavItems, sidebarNavItems }: MobileNavProps) {
-  const pathname = usePathname()
-  const [isOpen, setIsOpen] = React.useState(false)
+export function MobileNav({ items }: MobileNavProps) {
+  const isDesktop = useMediaQuery("(min-width: 1024px)")
+  const segment = useSelectedLayoutSegment()
+  const [open, setOpen] = React.useState(false)
+
+  if (isDesktop) return null
 
   return (
-    <Sheet open={isOpen} onOpenChange={setIsOpen}>
+    <Sheet open={open} onOpenChange={setOpen}>
       <SheetTrigger asChild>
         <Button
           variant="ghost"
-          className="mr-2 px-0 text-base hover:bg-transparent focus-visible:bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 lg:hidden"
+          size="icon"
+          className="size-5 hover:bg-transparent focus-visible:bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 lg:hidden"
         >
-          <Icons.menu className="h-6 w-6" />
+          <Icons.menu aria-hidden="true" />
           <span className="sr-only">Toggle Menu</span>
         </Button>
       </SheetTrigger>
-      <SheetContent side="left" className="pl-1 pr-0">
-        <div className="px-7">
+      <SheetContent side="left" className="pl-1 pr-0 pt-9">
+        <div className="w-full px-7">
           <Link
-            aria-label="Home"
             href="/"
             className="flex items-center"
-            onClick={() => setIsOpen(false)}
+            onClick={() => setOpen(false)}
           >
-            <Icons.logo className="mr-2 h-4 w-4" aria-hidden="true" />
+            <Icons.logo className="mr-2 size-4" aria-hidden="true" />
             <span className="font-bold">{siteConfig.name}</span>
+            <span className="sr-only">Home</span>
           </Link>
         </div>
         <ScrollArea className="my-4 h-[calc(100vh-8rem)] pb-10 pl-6">
           <div className="pl-1 pr-7">
-            <Accordion type="single" collapsible className="w-full">
-              {mainNavItems?.map((item, index) => (
+            <Accordion type="multiple" className="w-full">
+              {items?.map((item, index) => (
                 <AccordionItem value={item.title} key={index}>
                   <AccordionTrigger className="text-sm capitalize">
                     {item.title}
@@ -65,9 +69,10 @@ export function MobileNav({ mainNavItems, sidebarNavItems }: MobileNavProps) {
                           <MobileLink
                             key={index}
                             href={String(subItem.href)}
-                            pathname={pathname}
-                            setIsOpen={setIsOpen}
+                            segment={String(segment)}
+                            setOpen={setOpen}
                             disabled={subItem.disabled}
+                            className="m-1"
                           >
                             {subItem.title}
                           </MobileLink>
@@ -84,35 +89,6 @@ export function MobileNav({ mainNavItems, sidebarNavItems }: MobileNavProps) {
                   </AccordionContent>
                 </AccordionItem>
               ))}
-              <AccordionItem value="sidebar">
-                <AccordionTrigger className="text-sm">
-                  Sidebar Menu
-                </AccordionTrigger>
-                <AccordionContent>
-                  <div className="flex flex-col space-y-2">
-                    {sidebarNavItems?.map((item, index) =>
-                      item.href ? (
-                        <MobileLink
-                          key={index}
-                          href={String(item.href)}
-                          pathname={pathname}
-                          setIsOpen={setIsOpen}
-                          disabled={item.disabled}
-                        >
-                          {item.title}
-                        </MobileLink>
-                      ) : (
-                        <div
-                          key={index}
-                          className="text-foreground/70 transition-colors"
-                        >
-                          {item.title}
-                        </div>
-                      )
-                    )}
-                  </div>
-                </AccordionContent>
-              </AccordionItem>
             </Accordion>
           </div>
         </ScrollArea>
@@ -121,30 +97,34 @@ export function MobileNav({ mainNavItems, sidebarNavItems }: MobileNavProps) {
   )
 }
 
-interface MobileLinkProps {
-  children?: React.ReactNode
+interface MobileLinkProps
+  extends React.AnchorHTMLAttributes<HTMLAnchorElement> {
   href: string
   disabled?: boolean
-  pathname: string
-  setIsOpen: React.Dispatch<React.SetStateAction<boolean>>
+  segment: string
+  setOpen: React.Dispatch<React.SetStateAction<boolean>>
 }
 
 function MobileLink({
   children,
   href,
   disabled,
-  pathname,
-  setIsOpen,
+  segment,
+  setOpen,
+  className,
+  ...props
 }: MobileLinkProps) {
   return (
     <Link
       href={href}
       className={cn(
         "text-foreground/70 transition-colors hover:text-foreground",
-        pathname === href && "text-foreground",
-        disabled && "pointer-events-none opacity-60"
+        href.includes(segment) && "text-foreground",
+        disabled && "pointer-events-none opacity-60",
+        className
       )}
-      onClick={() => setIsOpen(false)}
+      onClick={() => setOpen(false)}
+      {...props}
     >
       {children}
     </Link>

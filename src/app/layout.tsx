@@ -1,43 +1,42 @@
-import "@/styles/globals.css"
-
-import type { Metadata } from "next"
+import type { Metadata, Viewport } from "next"
+import { env } from "@/env.js"
 import { ClerkProvider } from "@clerk/nextjs"
 
+import "@/styles/globals.css"
+
+import { GeistMono } from "geist/font/mono"
+import { GeistSans } from "geist/font/sans"
+
 import { siteConfig } from "@/config/site"
-import { fontMono, fontSans } from "@/lib/fonts"
-import { cn } from "@/lib/utils"
+import { fontHeading } from "@/lib/fonts"
+import { absoluteUrl, cn } from "@/lib/utils"
 import { Toaster } from "@/components/ui/toaster"
+import { Analytics } from "@/components/analytics"
+import { ThemeProvider } from "@/components/providers"
 import { TailwindIndicator } from "@/components/tailwind-indicator"
-import { ThemeProvider } from "@/components/theme-provider"
 
 export const metadata: Metadata = {
+  metadataBase: new URL(env.NEXT_PUBLIC_APP_URL),
   title: {
     default: siteConfig.name,
     template: `%s - ${siteConfig.name}`,
   },
   description: siteConfig.description,
   keywords: [
-    "Next.js",
-    "React",
-    "Tailwind CSS",
-    "Server Components",
-    "Server Actions",
-    "Skateshop",
-    "Skateboard",
-    "Skateboarding",
-    "Kickflip",
+    "nextjs",
+    "react",
+    "react server components",
+    "skateshop",
+    "skateboarding",
+    "kickflip",
   ],
   authors: [
     {
       name: "sadmann7",
-      url: "https://github.com/sadmann7",
+      url: "https://www.sadmn.com",
     },
   ],
   creator: "sadmann7",
-  themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "white" },
-    { media: "(prefers-color-scheme: dark)", color: "black" },
-  ],
   openGraph: {
     type: "website",
     locale: "en_US",
@@ -51,13 +50,20 @@ export const metadata: Metadata = {
     title: siteConfig.name,
     description: siteConfig.description,
     images: [`${siteConfig.url}/og.jpg`],
-    creator: "@sadmann7",
+    creator: "@sadmann17",
   },
   icons: {
-    icon: "/favicon.ico",
-    shortcut: "/favicon-16x16.png",
-    apple: "/apple-touch-icon.png",
+    icon: "/icon.png",
   },
+  manifest: absoluteUrl("/site.webmanifest"),
+}
+
+export const viewport: Viewport = {
+  colorScheme: "dark light",
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "white" },
+    { media: "(prefers-color-scheme: dark)", color: "black" },
+  ],
 }
 
 interface RootLayoutProps {
@@ -66,25 +72,30 @@ interface RootLayoutProps {
 
 export default function RootLayout({ children }: RootLayoutProps) {
   return (
-    <>
-      <ClerkProvider>
-        <html lang="en" suppressHydrationWarning>
-          <head />
-          <body
-            className={cn(
-              "min-h-screen bg-background font-sans antialiased",
-              fontSans.variable,
-              fontMono.variable
-            )}
+    <ClerkProvider>
+      <html lang="en" suppressHydrationWarning>
+        <head />
+        <body
+          className={cn(
+            "min-h-screen bg-background font-sans antialiased",
+            GeistSans.variable,
+            GeistMono.variable,
+            fontHeading.variable
+          )}
+        >
+          <ThemeProvider
+            attribute="class"
+            defaultTheme="system"
+            enableSystem
+            disableTransitionOnChange
           >
-            <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
-              {children}
-              <TailwindIndicator />
-            </ThemeProvider>
-            <Toaster />
-          </body>
-        </html>
-      </ClerkProvider>
-    </>
+            {children}
+            <TailwindIndicator />
+            <Analytics />
+          </ThemeProvider>
+          <Toaster />
+        </body>
+      </html>
+    </ClerkProvider>
   )
 }

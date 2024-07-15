@@ -9,14 +9,12 @@ export const authSchema = z.object({
     .min(8, {
       message: "Password must be at least 8 characters long",
     })
-    .max(100)
-    .regex(/^(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.*[!@#$%^&*])(?=.{8,})/, {
-      message:
-        "Password must contain at least 8 characters, one uppercase, one lowercase, one number and one special character",
+    .max(100, {
+      message: "Password must be at most 100 characters long",
     }),
 })
 
-export const verfifyEmailSchema = z.object({
+export const verifyEmailSchema = z.object({
   code: z
     .string()
     .min(6, {
@@ -33,9 +31,20 @@ export const resetPasswordSchema = z
   .object({
     password: authSchema.shape.password,
     confirmPassword: authSchema.shape.password,
-    code: verfifyEmailSchema.shape.code,
+    code: verifyEmailSchema.shape.code,
   })
   .refine((data) => data.password === data.confirmPassword, {
     message: "Passwords do not match",
     path: ["confirmPassword"],
   })
+
+export const userPrivateMetadataSchema = z.object({
+  stripePriceId: z.string().optional().nullable(),
+  stripeSubscriptionId: z.string().optional().nullable(),
+  stripeCustomerId: z.string().optional().nullable(),
+  stripeCurrentPeriodEnd: z.string().optional().nullable(),
+})
+
+export type UserPrivateMetadataSchema = z.infer<
+  typeof userPrivateMetadataSchema
+>

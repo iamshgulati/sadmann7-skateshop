@@ -1,16 +1,25 @@
-import type { MainNavItem } from "@/types"
+import type { FooterItem, MainNavItem } from "@/types"
 
-import { productCategories } from "@/config/products"
+import { productConfig } from "@/config/product"
 import { slugify } from "@/lib/utils"
 
 export type SiteConfig = typeof siteConfig
 
+const links = {
+  x: "https://twitter.com/sadmann17",
+  github: "https://github.com/sadmann7/skateshop",
+  githubAccount: "https://github.com/sadmann7",
+  discord: "https://discord.com/users/sadmann7",
+  calDotCom: "https://cal.com/sadmann7",
+}
+
 export const siteConfig = {
-  name: "Skateshop13",
+  name: "Skateshop",
   description:
-    "An open source e-commerce skateshop build with everything new in Next.js 13.",
-  url: "https://skateshop13.vercel.app/",
-  ogImage: "https://skateshop13.vercel.app/opengraph-image.png",
+    "An open source e-commerce skateshop build with everything new in Next.js.",
+  url: "https://skateshop.sadmn.com",
+  ogImage: "https://skateshop.sadmn.com/opengraph-image.png",
+  links,
   mainNav: [
     {
       title: "Lobby",
@@ -35,26 +44,129 @@ export const siteConfig = {
         },
       ],
     },
-    ...productCategories.map((category) => ({
-      title: category.title,
+    ...productConfig.categories.map((category) => ({
+      title: category.name,
       items: [
         {
           title: "All",
-          href: `/categories/${slugify(category.title)}`,
-          description: `All ${category.title}.`,
+          href: `/categories/${slugify(category.name)}`,
+          description: `All ${category.name}.`,
           items: [],
         },
         ...category.subcategories.map((subcategory) => ({
-          title: subcategory.title,
-          href: `/categories/${slugify(category.title)}/${subcategory.slug}`,
+          title: subcategory.name,
+          href: `/categories/${slugify(category.name)}/${slugify(subcategory.name)}`,
           description: subcategory.description,
           items: [],
         })),
       ],
     })),
   ] satisfies MainNavItem[],
-  links: {
-    twitter: "https://twitter.com/sadmann17",
-    github: "https://github.com/sadmann7/skateshop",
-  },
+  footerNav: [
+    {
+      title: "Credits",
+      items: [
+        {
+          title: "OneStopShop",
+          href: "https://onestopshop.jackblatch.com",
+          external: true,
+        },
+        {
+          title: "Acme Corp",
+          href: "https://acme-corp.jumr.dev",
+          external: true,
+        },
+        {
+          title: "craft.mxkaske.dev",
+          href: "https://craft.mxkaske.dev",
+          external: true,
+        },
+        {
+          title: "Taxonomy",
+          href: "https://tx.shadcn.com/",
+          external: true,
+        },
+        {
+          title: "shadcn/ui",
+          href: "https://ui.shadcn.com",
+          external: true,
+        },
+      ],
+    },
+    {
+      title: "Help",
+      items: [
+        {
+          title: "About",
+          href: "/about",
+          external: false,
+        },
+        {
+          title: "Contact",
+          href: "/contact",
+          external: false,
+        },
+        {
+          title: "Terms",
+          href: "/terms",
+          external: false,
+        },
+        {
+          title: "Privacy",
+          href: "/privacy",
+          external: false,
+        },
+      ],
+    },
+    {
+      title: "Social",
+      items: [
+        {
+          title: "X",
+          href: links.x,
+          external: true,
+        },
+        {
+          title: "GitHub",
+          href: links.githubAccount,
+          external: true,
+        },
+        {
+          title: "Discord",
+          href: links.discord,
+          external: true,
+        },
+        {
+          title: "cal.com",
+          href: links.calDotCom,
+          external: true,
+        },
+      ],
+    },
+    {
+      title: "Lofi",
+      items: [
+        {
+          title: "beats to study to",
+          href: "https://www.youtube.com/watch?v=jfKfPfyJRdk",
+          external: true,
+        },
+        {
+          title: "beats to chill to",
+          href: "https://www.youtube.com/watch?v=rUxyKA_-grg",
+          external: true,
+        },
+        {
+          title: "a fresh start",
+          href: "https://www.youtube.com/watch?v=rwionZbOryo",
+          external: true,
+        },
+        {
+          title: "coffee to go",
+          href: "https://www.youtube.com/watch?v=2gliGzb2_1I",
+          external: true,
+        },
+      ],
+    },
+  ] satisfies FooterItem[],
 }

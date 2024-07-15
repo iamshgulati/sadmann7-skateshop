@@ -1,11 +1,14 @@
-import { type Product } from "@/db/schema"
-import type { FileWithPath } from "react-dropzone"
+import { type Store } from "@/db/schema"
+import { type SQL } from "drizzle-orm"
+import type Stripe from "stripe"
+import { type ClientUploadedFileData } from "uploadthing/types"
 
-import { type Icons } from "@/components/icons"
+import type { Icons } from "@/components/icons"
 
 export interface NavItem {
   title: string
   href?: string
+  active?: boolean
   disabled?: boolean
   external?: boolean
   icon?: keyof typeof Icons
@@ -14,54 +17,78 @@ export interface NavItem {
 }
 
 export interface NavItemWithChildren extends NavItem {
-  items: NavItemWithChildren[]
-}
-
-export interface NavItemWithOptionalChildren extends NavItem {
   items?: NavItemWithChildren[]
 }
 
-export type MainNavItem = NavItemWithOptionalChildren
+export interface FooterItem {
+  title: string
+  items: {
+    title: string
+    href: string
+    external?: boolean
+  }[]
+}
+
+export type MainNavItem = NavItemWithChildren
 
 export type SidebarNavItem = NavItemWithChildren
 
-export type UserRole = "user" | "admin"
-
-export type Option = {
-  label: string
-  value: string
+export interface SearchParams {
+  [key: string]: string | string[] | undefined
 }
 
-export type FileWithPreview = FileWithPath & {
-  preview: string
-}
+export interface UploadedFile<T = unknown> extends ClientUploadedFileData<T> {}
 
-export type StoredFile = {
+export interface StoredFile {
   id: string
   name: string
   url: string
 }
 
-export type CartItem = {
-  productId: number
-  quantity: number
+export interface Option {
+  label: string
+  value: string
+  icon?: React.ComponentType<{ className?: string }>
+  withCount?: boolean
 }
 
-export interface CheckoutItem extends CartItem {
-  price: number
+export interface DataTableFilterField<TData> {
+  label: string
+  value: keyof TData
+  placeholder?: string
+  options?: Option[]
 }
 
-export interface CartLineItem
-  extends Pick<
-    Product,
-    "id" | "name" | "images" | "price" | "inventory" | "storeId"
-  > {
-  storeName: string | null
-}
+export type DrizzleWhere<T> =
+  | SQL<unknown>
+  | ((aliases: T) => SQL<T> | undefined)
+  | undefined
 
-export type SubscriptionPlan = {
-  name: string
+export type StripePaymentStatus = Stripe.PaymentIntent.Status
+
+export interface Plan {
+  id: Store["plan"]
+  title: string
   description: string
+  features: string[]
   stripePriceId: string
-  monthlyPrice?: number | null
+  limits: {
+    stores: number
+    products: number
+    tags: number
+    variants: number
+  }
+}
+
+export interface PlanWithPrice extends Plan {
+  price: string
+}
+
+export interface UserPlan extends Plan {
+  stripeSubscriptionId?: string | null
+  stripeCurrentPeriodEnd?: string | null
+  stripeCustomerId?: string | null
+  isSubscribed: boolean
+  isCanceled: boolean
+  isActive: boolean
 }

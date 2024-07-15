@@ -9,8 +9,6 @@
 /coverage
 
 # database
-/prisma/db.sqlite
-/prisma/db.sqlite-journal
 
 # next.js
 /.next/
@@ -35,8 +33,15 @@ yarn-error.log*
 .env
 .env*.local
 
+# web vitals
+.unlighthouse
+
+# external
+.react-email
+
 # vercel
 .vercel
 
 # typescript
+.contentlayer
 *.tsbuildinfo

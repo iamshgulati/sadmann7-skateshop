@@ -1,27 +1,20 @@
-import { clerkClient } from "@clerk/nextjs"
+import type { Plan } from "@/types"
 
-import { freePlan, proPlan } from "@/config/subscriptions"
+import { pricingConfig } from "@/config/pricing"
 
-export async function getUserSubscriptionPlan(userId: string) {
-  const user = await clerkClient.users.getUser(userId)
+export function getPlanByPriceId({ priceId }: { priceId: string }) {
+  return Object.values(pricingConfig.plans).find(
+    (plan) => plan.stripePriceId === priceId
+  )
+}
 
-  if (!user) {
-    throw new Error("User not found")
-  }
+export function getPlanLimits({ planId }: { planId?: Plan["id"] }) {
+  const { features } = pricingConfig.plans[planId ?? "free"]
 
-  // Check if user is on a pro plan
-  const isPro =
-    user.privateMetadata.stripePriceId &&
-    (user.privateMetadata.stripeCurrentPeriodEnd as Date)?.getTime() +
-      86_400_000 >
-      Date.now()
+  const [storeLimit, productLimit] = features.map((feature) => {
+    const [value] = feature.match(/\d+/) || []
+    return value ? parseInt(value, 10) : 0
+  })
 
-  const plan = isPro ? proPlan : freePlan
-
-  return {
-    ...plan,
-    stripeSubscriptionId: user.privateMetadata.stripeSubscriptionId,
-    stripeCurrentPeriodEnd: user.privateMetadata.stripeCurrentPeriodEnd,
-    isPro,
-  }
+  return { storeLimit: storeLimit ?? 0, productLimit: productLimit ?? 0 }
 }

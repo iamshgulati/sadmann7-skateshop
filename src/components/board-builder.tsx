@@ -3,12 +3,17 @@
 import * as React from "react"
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import { type Product } from "@/db/schema"
+import { ChevronDownIcon } from "@radix-ui/react-icons"
 import { toast } from "sonner"
 
-import { sortOptions } from "@/config/products"
+import { queryConfig } from "@/config/query"
+import { addToCart, deleteCartItem } from "@/lib/actions/cart"
+import { showErrorToast } from "@/lib/handle-error"
 import { cn } from "@/lib/utils"
+import { type CartItemSchema } from "@/lib/validations/cart"
 import { useDebounce } from "@/hooks/use-debounce"
 import { Button } from "@/components/ui/button"
+import { Card, CardDescription } from "@/components/ui/card"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -18,6 +23,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
 import { Separator } from "@/components/ui/separator"
 import {
   Sheet,
@@ -28,18 +34,24 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet"
 import { Slider } from "@/components/ui/slider"
-import { Icons } from "@/components/icons"
+import { Switch } from "@/components/ui/switch"
 import { PaginationButton } from "@/components/pagination-button"
-import { addToCartAction } from "@/app/_actions/cart"
-
-import { ProductCard } from "./product-card"
+import { ProductCard } from "@/components/product-card"
 
 interface BoardBuilderProps {
   products: Product[]
   pageCount: number
+  subcategory: string | null
+  cartItems: CartItemSchema[]
 }
 
-export function BoardBuilder({ products, pageCount }: BoardBuilderProps) {
+export function BoardBuilder({
+  products,
+  pageCount,
+  subcategory,
+  cartItems,
+}: BoardBuilderProps) {
+  const id = React.useId()
   const router = useRouter()
   const pathname = usePathname()
   const searchParams = useSearchParams()
@@ -49,6 +61,7 @@ export function BoardBuilder({ products, pageCount }: BoardBuilderProps) {
   const page = searchParams?.get("page") ?? "1"
   const per_page = searchParams?.get("per_page") ?? "8"
   const sort = searchParams?.get("sort") ?? "createdAt.desc"
+  const active = searchParams?.get("active") ?? "true"
 
   // Create query string
   const createQueryString = React.useCallback(
@@ -69,7 +82,7 @@ export function BoardBuilder({ products, pageCount }: BoardBuilderProps) {
   )
 
   // Price filter
-  const [priceRange, setPriceRange] = React.useState<[number, number]>([0, 100])
+  const [priceRange, setPriceRange] = React.useState<[number, number]>([0, 500])
   const debouncedPrice = useDebounce(priceRange, 500)
 
   React.useEffect(() => {
@@ -78,14 +91,57 @@ export function BoardBuilder({ products, pageCount }: BoardBuilderProps) {
       router.push(
         `${pathname}?${createQueryString({
           price_range: `${min}-${max}`,
-        })}`
+        })}`,
+        {
+          scroll: false,
+        }
       )
     })
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [debouncedPrice])
 
+  // Add product to cart
+  const addProductToCart = React.useCallback(
+    async (product: Product) => {
+      try {
+        const hasProductInCart = cartItems.some(
+          (item) => item.productId === product.id
+        )
+
+        // Only allow one product per subcategory in cart
+        if (!hasProductInCart) {
+          const productWithSameSubcategory = cartItems.find(
+            (item) => item.subcategoryId === product.subcategoryId
+          )
+
+          if (productWithSameSubcategory) {
+            await deleteCartItem({
+              productId: productWithSameSubcategory.productId,
+            })
+          }
+
+          await addToCart({
+            productId: product.id,
+            quantity: 1,
+          })
+
+          toast.success("Added to cart.")
+          return
+        }
+
+        await deleteCartItem({
+          productId: product.id,
+        })
+        toast.success("Removed from cart.")
+      } catch (err) {
+        showErrorToast(err)
+      }
+    },
+    [cartItems]
+  )
+
   return (
-    <div className="flex flex-col space-y-6">
+    <section className="flex flex-col space-y-6">
       <div className="flex items-center space-x-2">
         <Sheet>
           <SheetTrigger asChild>
@@ -98,16 +154,41 @@ export function BoardBuilder({ products, pageCount }: BoardBuilderProps) {
               <SheetTitle>Filters</SheetTitle>
             </SheetHeader>
             <Separator />
-            <div className="flex flex-1 flex-col gap-5 overflow-hidden px-1">
-              <div className="space-y-4">
+            <div className="flex flex-1 flex-col gap-5 overflow-hidden p-1">
+              <div className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm">
+                <div className="space-y-0.5">
+                  <Label htmlFor={`active-${id}`}>Active stores</Label>
+                  <CardDescription>
+                    Only show products from stores that are connected to Stripe
+                  </CardDescription>
+                </div>
+                <Switch
+                  id={`active-${id}`}
+                  checked={active === "true"}
+                  onCheckedChange={(value) =>
+                    startTransition(() => {
+                      router.push(
+                        `${pathname}?${createQueryString({
+                          active: value ? "true" : "false",
+                        })}`
+                      ),
+                        {
+                          scroll: false,
+                        }
+                    })
+                  }
+                  disabled={isPending}
+                />
+              </div>
+              <Card className="space-y-4 rounded-lg p-3">
                 <h3 className="text-sm font-medium tracking-wide text-foreground">
                   Price range ($)
                 </h3>
                 <Slider
                   variant="range"
                   thickness="thin"
-                  defaultValue={[0, 100]}
-                  max={100}
+                  defaultValue={[0, 500]}
+                  max={500}
                   step={1}
                   value={priceRange}
                   onValueChange={(value: typeof priceRange) => {
@@ -132,7 +213,7 @@ export function BoardBuilder({ products, pageCount }: BoardBuilderProps) {
                     type="number"
                     inputMode="numeric"
                     min={priceRange[0]}
-                    max={100}
+                    max={500}
                     className="h-9"
                     value={priceRange[1]}
                     onChange={(e) => {
@@ -141,14 +222,13 @@ export function BoardBuilder({ products, pageCount }: BoardBuilderProps) {
                     }}
                   />
                 </div>
-              </div>
+              </Card>
             </div>
             <div>
               <Separator className="my-4" />
               <SheetFooter>
                 <Button
-                  aria-label="Clear Filters"
-                  variant="secondary"
+                  aria-label="Clear filters"
                   size="sm"
                   className="w-full"
                   onClick={() => {
@@ -156,9 +236,12 @@ export function BoardBuilder({ products, pageCount }: BoardBuilderProps) {
                       router.push(
                         `${pathname}?${createQueryString({
                           price_range: 0 - 100,
-                        })}`
+                          active: "true",
+                        })}`,
+                        {
+                          scroll: false,
+                        }
                       )
-
                       setPriceRange([0, 100])
                     })
                   }}
@@ -174,13 +257,13 @@ export function BoardBuilder({ products, pageCount }: BoardBuilderProps) {
           <DropdownMenuTrigger asChild>
             <Button aria-label="Sort products" size="sm" disabled={isPending}>
               Sort
-              <Icons.chevronDown className="ml-2 h-4 w-4" aria-hidden="true" />
+              <ChevronDownIcon className="ml-2 size-4" aria-hidden="true" />
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="start" className="w-48">
             <DropdownMenuLabel>Sort by</DropdownMenuLabel>
             <DropdownMenuSeparator />
-            {sortOptions.map((option) => (
+            {queryConfig.store.sortOptions.map((option) => (
               <DropdownMenuItem
                 key={option.label}
                 className={cn(option.value === sort && "font-bold")}
@@ -189,7 +272,10 @@ export function BoardBuilder({ products, pageCount }: BoardBuilderProps) {
                     router.push(
                       `${pathname}?${createQueryString({
                         sort: option.value,
-                      })}`
+                      })}`,
+                      {
+                        scroll: false,
+                      }
                     )
                   })
                 }}
@@ -209,29 +295,17 @@ export function BoardBuilder({ products, pageCount }: BoardBuilderProps) {
         </div>
       ) : null}
       <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-        {products.map((product) => (
+        {/* {products.map((product) => (
           <ProductCard
             key={product.id}
+            variant="switchable"
             product={product}
-            variant="selectable"
-            isPending={isPending}
-            onSelect={() => {
-              startTransition(async () => {
-                try {
-                  await addToCartAction({
-                    productId: product.id,
-                    quantity: 1,
-                  })
-                  toast.success("Added to cart.")
-                } catch (error) {
-                  error instanceof Error
-                    ? toast.error(error.message)
-                    : toast.error("Something went wrong, please try again.")
-                }
-              })
-            }}
+            isAddedToCart={cartItems
+              .map((item) => item.productId)
+              .includes(product.id)}
+            onSwitch={() => addProductToCart(product)}
           />
-        ))}
+        ))} */}
       </div>
       {products.length ? (
         <PaginationButton
@@ -240,12 +314,8 @@ export function BoardBuilder({ products, pageCount }: BoardBuilderProps) {
           per_page={per_page}
           sort={sort}
           createQueryString={createQueryString}
-          router={router}
-          pathname={pathname}
-          isPending={isPending}
-          startTransition={startTransition}
         />
       ) : null}
-    </div>
+    </section>
   )
 }
